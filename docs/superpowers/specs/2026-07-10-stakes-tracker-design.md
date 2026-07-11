@@ -18,9 +18,10 @@ history at read time).
 
 - **Day record:** `{ date, personA: done|missed|null, personB: done|missed|null }`
   keyed by local calendar date.
-- **Stake:** configurable dollar amount (default $10), stored in settings.
-  Changing it affects future days only; past days use the stake in effect when
-  they were finalized (each finalized day snapshots the stake).
+- **Stake:** configurable dollar amount (default $10). Every stake change is
+  recorded as an event with an effective date (taking effect the next day), so
+  the derived ledger knows the stake for any day — including days that were
+  never marked and finalize lazily. Past days are never affected by a change.
 - **Rules per finalized day:**
   - Both fail → pot += stake.
   - Both succeed → pot carries unchanged.
@@ -85,8 +86,8 @@ Both choices persist in `localStorage`.
   setting so both phones agree on day boundaries.
 - Marking is idempotent and last-write-wins within the grace window; after
   grace, the UI disallows edits and the ledger ignores late writes.
-- Changing the stake mid-pot: pot already accumulated is unchanged; future
-  both-fail days add the new stake.
+- Changing the stake mid-pot: pot already accumulated is unchanged; both-fail
+  days from tomorrow onward add the new stake.
 
 ## Testing
 
