@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /spaces/{spaceId} {
+      allow get, create, update: if true;
+      match /days/{day} {
+        allow read, write: if true;
+      }
+      match /events/{event} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
