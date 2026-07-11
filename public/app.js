@@ -123,7 +123,50 @@ function render() {
   renderSettings();
 }
 
-function renderToday() {}    // Task 6
+function renderToday() {
+  const { today, pot, balance } = ledger();
+  const s = state.settings;
+  const me = state.who;
+  const them = WHO_OTHER(me);
+  const myGoal = me === 'a' ? s.goalA : s.goalB;
+  const theirName = them === 'a' ? s.nameA : s.nameB;
+  const todayRec = state.days[today] || {};
+  const yesterday = addDays(today, -1);
+  const yRec = state.days[yesterday] || {};
+  const showYesterday = yesterday >= s.startDate && isEditable(yesterday, today);
+
+  $('#tab-today').innerHTML = `
+    <h1>${fmtDate(today)}</h1>
+    <div class="pot">Pot <strong>$${pot}</strong>${balanceLine(balance)}</div>
+    <div class="card">
+      <h2>${esc(myGoal)}</h2>
+      <div class="mark">
+        <button id="mark-done" class="done-btn ${todayRec[me] === 'done' ? 'active' : ''}">Done ✓</button>
+        <button id="mark-missed" class="missed-btn ${todayRec[me] === 'missed' ? 'active' : ''}">Missed ✗</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>${esc(theirName)}</h2>
+      ${statusChip(todayRec[them])}
+    </div>
+    ${showYesterday ? `
+    <div class="card">
+      <h3>Yesterday — ${fmtDate(yesterday)}</h3>
+      <p>You: ${statusChip(yRec[me])} · ${esc(theirName)}: ${statusChip(yRec[them])}</p>
+      <div class="mark">
+        <button id="y-done" class="done-btn ${yRec[me] === 'done' ? 'active' : ''}">Done ✓</button>
+        <button id="y-missed" class="missed-btn ${yRec[me] === 'missed' ? 'active' : ''}">Missed ✗</button>
+      </div>
+    </div>` : ''}
+  `;
+
+  $('#mark-done').onclick = () => store.markDay(state.spaceId, today, me, 'done');
+  $('#mark-missed').onclick = () => store.markDay(state.spaceId, today, me, 'missed');
+  if (showYesterday) {
+    $('#y-done').onclick = () => store.markDay(state.spaceId, yesterday, me, 'done');
+    $('#y-missed').onclick = () => store.markDay(state.spaceId, yesterday, me, 'missed');
+  }
+}
 function renderHistory() {}  // Task 7
 function renderSettings() {} // Task 7
 
