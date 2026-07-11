@@ -54,5 +54,26 @@ export function computeLedger({ days, events, defaultStake, startDate, today }) 
     }
     rows.push({ date, a, b, stake, pot, payout });
   }
-  return { rows, pot, balance, pendingSettle: null, streaks: { a: 0, b: 0 } };
+  for (const ev of events) {
+    if (ev.type === 'settle' && ev.status === 'confirmed') {
+      balance += ev.debtor === 'b' ? -ev.amount : ev.amount;
+    }
+  }
+  const pendingSettle =
+    events.find(e => e.type === 'settle' && e.status === 'pending') || null;
+  return { rows, pot, balance, pendingSettle, streaks: computeStreaks(rows) };
+}
+
+function computeStreaks(rows) {
+  const streak = who => {
+    let n = 0;
+    for (let i = rows.length - 1; i >= 0; i--) {
+      const s = rows[i][who];
+      if (s === 'pending') continue;
+      if (s === 'done') n++;
+      else break;
+    }
+    return n;
+  };
+  return { a: streak('a'), b: streak('b') };
 }

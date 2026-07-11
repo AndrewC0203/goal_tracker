@@ -72,3 +72,40 @@ test('split with empty pot owes just the stake', () => {
   assert.deepEqual(led.rows[0].payout, { debtor: 'a', amount: 10 });
   assert.equal(led.balance, -10);
 });
+
+test('stake change applies from its effective date', () => {
+  const days = {
+    '2026-07-01': { a: 'missed', b: 'missed' }, // stake 10
+    '2026-07-02': { a: 'missed', b: 'missed' }, // stake 25
+  };
+  const events = [{ type: 'stakeChange', amount: 25, effectiveDate: '2026-07-02' }];
+  const led = computeLedger({ ...base, days, events, today: '2026-07-02' });
+  assert.equal(led.pot, 35);
+  assert.equal(led.rows[0].stake, 10);
+  assert.equal(led.rows[1].stake, 25);
+});
+
+test('confirmed settle zeroes the balance; pending and cancelled do not', () => {
+  const days = { '2026-07-01': { a: 'done', b: 'missed' } };
+  const settle = { type: 'settle', status: 'pending', amount: 10, debtor: 'b' };
+  let led = computeLedger({ ...base, days, events: [settle], today: '2026-07-01' });
+  assert.equal(led.balance, 10);
+  assert.equal(led.pendingSettle.amount, 10);
+  led = computeLedger({ ...base, days, events: [{ ...settle, status: 'confirmed' }], today: '2026-07-01' });
+  assert.equal(led.balance, 0);
+  assert.equal(led.pendingSettle, null);
+  led = computeLedger({ ...base, days, events: [{ ...settle, status: 'cancelled' }], today: '2026-07-01' });
+  assert.equal(led.balance, 10);
+  assert.equal(led.pendingSettle, null);
+});
+
+test('streaks count consecutive done days, skipping pending', () => {
+  const days = {
+    '2026-07-01': { a: 'done', b: 'missed' },
+    '2026-07-02': { a: 'done', b: 'done' },
+    '2026-07-03': { a: 'done' }, // yesterday: b unmarked => pending, skipped
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-04' });
+  assert.equal(led.streaks.a, 3);
+  assert.equal(led.streaks.b, 1);
+});
