@@ -167,8 +167,109 @@ function renderToday() {
     $('#y-missed').onclick = () => store.markDay(state.spaceId, yesterday, me, 'missed');
   }
 }
-function renderHistory() {}  // Task 7
-function renderSettings() {} // Task 7
+function renderHistory() {
+  const { rows, streaks } = ledger();
+  const s = state.settings;
+  const name = w => (w === 'a' ? s.nameA : s.nameB);
+  const dayItems = rows.slice().reverse().map(r => `
+    <div class="hrow">
+      <span>${r.date}</span>
+      <span>${esc(s.nameA)} ${statusChip(r.a)} ${esc(s.nameB)} ${statusChip(r.b)}</span>
+    </div>
+    ${r.payout ? `<div class="payout">💸 ${esc(name(r.payout.debtor))} owed ${esc(name(WHO_OTHER(r.payout.debtor)))} $${r.payout.amount}</div>` : ''}
+  `).join('');
+  const settleItems = state.events
+    .filter(e => e.type === 'settle' && e.status === 'confirmed')
+    .map(e => `<div class="payout">✅ ${esc(name(e.debtor))} paid ${esc(name(WHO_OTHER(e.debtor)))} $${e.amount} (${(e.createdAt || '').slice(0, 10)})</div>`)
+    .join('');
+  $('#tab-history').innerHTML = `
+    <h1>History</h1>
+    <div class="card">🔥 ${esc(s.nameA)}: ${streaks.a}-day streak · ${esc(s.nameB)}: ${streaks.b}-day streak</div>
+    ${settleItems}
+    ${dayItems || '<p class="muted">No days yet.</p>'}
+  `;
+}
+
+function renderSettings() {
+  const { today, balance, pendingSettle } = ledger();
+  const s = state.settings;
+  const me = state.who;
+  const name = w => (w === 'a' ? s.nameA : s.nameB);
+  const debtorWho = balance > 0 ? 'b' : 'a';
+  // settings.stake is frozen at creation (it's computeLedger's defaultStake).
+  // The form shows the stake in force as of tomorrow, so a just-saved change
+  // (effective tomorrow) is reflected immediately and can't be double-added.
+  const tomorrow = addDays(today, 1);
+  let currentStake = s.stake;
+  state.events
+    .filter(e => e.type === 'stakeChange')
+    .sort((x, y) => (x.effectiveDate < y.effectiveDate ? -1 : 1))
+    .forEach(ev => { if (ev.effectiveDate <= tomorrow) currentStake = ev.amount; });
+
+  let settleHtml;
+  if (pendingSettle) {
+    settleHtml = `
+      <p>${esc(name(pendingSettle.debtor))} says they paid $${pendingSettle.amount}.</p>
+      ${me !== pendingSettle.debtor
+        ? '<button id="settle-confirm">Confirm received</button>'
+        : '<p class="muted">Waiting for confirmation…</p>'}
+      <button id="settle-cancel" class="secondary">Cancel</button>`;
+  } else if (balance !== 0) {
+    settleHtml = me === debtorWho
+      ? `<button id="settle-paid">I paid $${Math.abs(balance)}</button>`
+      : '<p class="muted">Waiting for them to pay up…</p>';
+  } else {
+    settleHtml = '<p class="muted">All square 🎉</p>';
+  }
+
+  $('#tab-settings').innerHTML = `
+    <h1>Settings</h1>
+    <div class="card">
+      <h2>Balance</h2>
+      ${balanceLine(balance) || '<p class="muted">$0 — nobody owes anybody.</p>'}
+      ${settleHtml}
+    </div>
+    <form id="settings-form" class="card">
+      <h2>Goals &amp; stake</h2>
+      <label>${esc(s.nameA)}'s goal <input name="goalA" value="${esc(s.goalA)}"></label>
+      <label>${esc(s.nameB)}'s goal <input name="goalB" value="${esc(s.goalB)}"></label>
+      <label>Daily stake ($) <input name="stake" type="number" min="1" value="${currentStake}"></label>
+      <p class="muted">Stake changes apply starting tomorrow.</p>
+      <button type="submit">Save</button>
+    </form>
+    <div class="card">
+      <h2>Invite your partner</h2>
+      <p class="code">${state.spaceId}</p>
+      <button id="copy-code" class="secondary">Copy code</button>
+    </div>
+  `;
+
+  const el = id => document.getElementById(id);
+  el('settle-paid')?.addEventListener('click', () =>
+    store.addEvent(state.spaceId, {
+      type: 'settle', status: 'pending',
+      amount: Math.abs(balance), debtor: debtorWho,
+    }));
+  el('settle-confirm')?.addEventListener('click', () =>
+    store.updateEvent(state.spaceId, pendingSettle.id, { status: 'confirmed' }));
+  el('settle-cancel')?.addEventListener('click', () =>
+    store.updateEvent(state.spaceId, pendingSettle.id, { status: 'cancelled' }));
+  el('copy-code').onclick = () => navigator.clipboard.writeText(state.spaceId);
+
+  el('settings-form').onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const stake = Number(f.get('stake'));
+    if (stake !== currentStake) {
+      await store.addEvent(state.spaceId, {
+        type: 'stakeChange', amount: stake, effectiveDate: addDays(today, 1),
+      });
+    }
+    await store.updateSettings(state.spaceId, {
+      goalA: f.get('goalA'), goalB: f.get('goalB'),
+    });
+  };
+}
 
 // ---------- tabs & init ----------
 
