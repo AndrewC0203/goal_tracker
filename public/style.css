@@ -1,0 +1,60 @@
+:root {
+  --bg: #101014; --card: #1b1b22; --line: #26262e;
+  --text: #f0f0f5; --muted: #8a8a99;
+  --green: #34c759; --red: #ff453a; --accent: #0a84ff;
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, system-ui, sans-serif;
+  min-height: 100dvh;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color: transparent;
+}
+.hidden { display: none !important; }
+.screen, .tab { padding: 24px 16px; max-width: 480px; margin: 0 auto; }
+h1 { font-size: 1.6rem; margin-bottom: 16px; }
+h2 { font-size: 1.1rem; margin-bottom: 8px; }
+h3 { font-size: 0.95rem; color: var(--muted); margin-bottom: 8px; }
+p { margin: 8px 0; }
+button {
+  font: inherit; border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--accent); color: #fff; padding: 10px 16px;
+}
+button.big { display: block; width: 100%; padding: 16px; font-size: 1.1rem; margin: 12px 0; }
+button.secondary { background: var(--card); color: var(--text); }
+label { display: block; margin: 12px 0; color: var(--muted); font-size: 0.95rem; }
+input {
+  display: block; width: 100%; margin-top: 4px; padding: 12px;
+  font: inherit; color: var(--text); background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.card { background: var(--card); border-radius: 16px; padding: 16px; margin: 12px 0; }
+.pot { text-align: center; font-size: 1.05rem; color: var(--muted); margin: 8px 0 16px; }
+.pot strong { color: var(--text); font-size: 1.5rem; }
+.owes { color: var(--accent); margin-top: 4px; }
+.mark { display: flex; gap: 12px; margin-top: 12px; }
+.mark button { flex: 1; padding: 16px; background: #2a2a33; color: var(--muted); font-size: 1.05rem; }
+.done-btn.active { background: var(--green); color: #fff; }
+.missed-btn.active { background: var(--red); color: #fff; }
+.chip {
+  display: inline-block; padding: 4px 10px; border-radius: 999px;
+  font-size: 0.9rem; background: #2a2a33; color: var(--muted);
+}
+.chip.done { background: rgba(52, 199, 89, 0.15); color: var(--green); }
+.chip.missed { background: rgba(255, 69, 58, 0.15); color: var(--red); }
+.hrow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.95rem;
+}
+.payout { color: var(--accent); font-size: 0.9rem; padding: 6px 0; }
+.muted { color: var(--muted); }
+.error { color: var(--red); }
+.code { font-family: ui-monospace, monospace; word-break: break-all; user-select: all; }
+#tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; display: flex;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+#tabbar button { flex: 1; background: none; color: var(--muted); padding: 14px 0; border-radius: 0; }
+#tabbar button.active { color: var(--accent); }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stakes</title>
+  <meta name="theme-color" content="#101014">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Stakes">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="onboarding" class="screen hidden">
+    <h1>💸 Stakes</h1>
+    <div id="ob-choice">
+      <button id="ob-create-btn" class="big">Create a new space</button>
+      <button id="ob-join-btn" class="big secondary">Join with a code</button>
+    </div>
+    <form id="ob-create-form" class="hidden">
+      <label>Your name <input name="nameA" required></label>
+      <label>Your goal <input name="goalA" placeholder="Hit protein goal" required></label>
+      <label>Partner's name <input name="nameB" required></label>
+      <label>Partner's goal <input name="goalB" placeholder="No sugary drinks" required></label>
+      <label>Daily stake ($) <input name="stake" type="number" min="1" value="10" required></label>
+      <button type="submit" class="big">Create</button>
+    </form>
+    <form id="ob-join-form" class="hidden">
+      <label>Space code <input name="code" autocapitalize="off" autocorrect="off" required></label>
+      <button type="submit" class="big">Join</button>
+      <p id="ob-join-error" class="error hidden">Space not found — check the code.</p>
+    </form>
+    <div id="ob-who" class="hidden">
+      <h2>Who are you?</h2>
+      <button id="ob-who-a" class="big"></button>
+      <button id="ob-who-b" class="big"></button>
+    </div>
+  </div>
+
+  <main id="app" class="hidden">
+    <section id="tab-today" class="tab"></section>
+    <section id="tab-history" class="tab hidden"></section>
+    <section id="tab-settings" class="tab hidden"></section>
+  </main>
+  <nav id="tabbar" class="hidden">
+    <button data-tab="today" class="active">Today</button>
+    <button data-tab="history">History</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
