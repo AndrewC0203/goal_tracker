@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addDays, todayInTz, isEditable, computeLedger } from '../public/ledger.js';
+import { addDays, todayInTz, isEditable, computeLedger, skipAvailable } from '../public/ledger.js';
 
 const base = { events: [], defaultStake: 10, startDate: '2026-07-01' };
 
@@ -97,6 +97,83 @@ test('confirmed settle zeroes the balance; pending and cancelled do not', () => 
   led = computeLedger({ ...base, days, events: [{ ...settle, status: 'cancelled' }], today: '2026-07-01' });
   assert.equal(led.balance, 10);
   assert.equal(led.pendingSettle, null);
+});
+
+test('both choosing skip skips the day: pot carries, no payout', () => {
+  const days = {
+    '2026-07-01': { a: 'missed', b: 'missed' }, // pot 10
+    '2026-07-02': { a: 'skip', b: 'skip' },
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-02' });
+  assert.equal(led.rows[1].skipped, true);
+  assert.equal(led.rows[1].a, 'skip');
+  assert.equal(led.rows[1].payout, null);
+  assert.equal(led.pot, 10);
+  assert.equal(led.balance, 0);
+});
+
+test('lone skipper counts as a miss: vs done it pays out, vs missed pot grows', () => {
+  const days = {
+    '2026-07-01': { a: 'skip', b: 'done' },   // a missed, b done -> a owes 10
+    '2026-07-02': { a: 'skip', b: 'missed' }, // both missed -> pot 10
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-02' });
+  assert.deepEqual(led.rows[0].payout, { debtor: 'a', amount: 10 });
+  assert.equal(led.rows[0].a, 'missed');
+  assert.equal(led.rows[1].skipped, false);
+  assert.equal(led.pot, 10);
+  assert.equal(led.balance, -10);
+});
+
+test('second both-skip inside 7 days degrades to both missed', () => {
+  const days = {
+    '2026-07-01': { a: 'skip', b: 'skip' },
+    '2026-07-04': { a: 'skip', b: 'skip' },
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-04' });
+  const second = led.rows.find(r => r.date === '2026-07-04');
+  assert.equal(second.skipped, false);
+  assert.equal(second.a, 'missed');
+  // 07-02 locked+unmarked (both missed) + the degraded 07-04 skip
+  assert.equal(led.pot, 20);
+});
+
+test('both-skip 7+ days after the last skip is allowed again', () => {
+  const days = {
+    '2026-07-01': { a: 'skip', b: 'skip' },
+    '2026-07-08': { a: 'skip', b: 'skip' },
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-08' });
+  assert.equal(led.rows.find(r => r.date === '2026-07-08').skipped, true);
+  // pot untouched by the skip; it's 50 from 07-02..07-06 locked both-missed days
+  assert.equal(led.pot, 50);
+});
+
+test('half-marked skip day stays pending until the other decides or it locks', () => {
+  const days = { '2026-07-01': { a: 'skip' } };
+  const led = computeLedger({ ...base, days, today: '2026-07-01' });
+  assert.equal(led.rows[0].a, 'skip');
+  assert.equal(led.rows[0].b, 'pending');
+  assert.equal(led.pot, 0);
+});
+
+test('skipped days do not break or extend streaks', () => {
+  const days = {
+    '2026-07-01': { a: 'done', b: 'done' },
+    '2026-07-02': { a: 'skip', b: 'skip' },
+    '2026-07-03': { a: 'done', b: 'missed' },
+  };
+  const led = computeLedger({ ...base, days, today: '2026-07-05' });
+  assert.equal(led.streaks.a, 2);
+  assert.equal(led.streaks.b, 0);
+});
+
+test('skipAvailable blocks dates within 7 days after a skip', () => {
+  const days = { '2026-07-05': { a: 'skip', b: 'skip' } };
+  const { rows } = computeLedger({ ...base, days, today: '2026-07-14' });
+  assert.equal(skipAvailable(rows, '2026-07-11'), false);
+  assert.equal(skipAvailable(rows, '2026-07-12'), true);
+  assert.equal(skipAvailable(rows, '2026-07-05'), true); // the skip day itself
 });
 
 test('streaks count consecutive done days, skipping pending', () => {

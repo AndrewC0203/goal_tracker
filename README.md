@@ -13,6 +13,9 @@ one goal each, one configurable daily stake (default $10).
   stake, and the pot resets to zero.
 - Unmarked days count as missed once the grace period ends — you can mark
   or fix *yesterday* until midnight tonight; older days are locked.
+- Yesterday can be **skipped** if you both choose Skip — the day doesn't
+  count at all. Only one skip per rolling 7 days. If only one of you picks
+  Skip (or the weekly skip is spent), the skipper counts as a miss.
 - Debts accumulate into a balance. Settling is two-step: the debtor taps
   "I paid", the other confirms. The app only keeps score — no real money.
 

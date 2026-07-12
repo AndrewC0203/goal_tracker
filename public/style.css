@@ -133,6 +133,9 @@ input:focus { outline: none; border-color: var(--felt-light); }
 .mark .done-btn.active:active { background: var(--felt-press); }
 .mark .missed-btn.active { background: var(--ember); color: #fff; }
 .mark .missed-btn.active:active { background: var(--ember-press); }
+.mark .skip-btn.active { background: var(--brass); color: oklch(0.25 0.05 95); }
+
+.skip-note { font-size: 0.8125rem; margin: 10px 0 0; }
 
 .grace-row { font-size: 0.9375rem; }
 
@@ -148,6 +151,7 @@ input:focus { outline: none; border-color: var(--felt-light); }
 .chip .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex: none; }
 .chip.done { background: oklch(0.46 0.1 145 / 0.18); color: var(--felt-light); }
 .chip.missed { background: oklch(0.5 0.155 25 / 0.18); color: var(--ember-light); }
+.chip.skip { background: oklch(0.86 0.084 95 / 0.16); color: var(--brass); }
 
 /* ---------- history ---------- */
 

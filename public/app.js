@@ -1,4 +1,4 @@
-import { computeLedger, todayInTz, addDays, isEditable } from './ledger.js';
+import { computeLedger, todayInTz, addDays, isEditable, skipAvailable } from './ledger.js';
 import * as store from './store.js';
 
 const $ = s => document.querySelector(s);
@@ -110,6 +110,7 @@ const fmtShort = d => fmtDate(d, { weekday: 'short', month: 'short', day: 'numer
 function statusChip(s) {
   if (s === 'done') return '<span class="chip done"><span class="dot"></span>Done</span>';
   if (s === 'missed') return '<span class="chip missed"><span class="dot"></span>Missed</span>';
+  if (s === 'skip') return '<span class="chip skip"><span class="dot"></span>Skip</span>';
   return '<span class="chip"><span class="dot"></span>Pending</span>';
 }
 
@@ -129,7 +130,7 @@ function render() {
 }
 
 function renderToday() {
-  const { today, pot, balance } = ledger();
+  const { today, pot, balance, rows } = ledger();
   const s = state.settings;
   const me = state.who;
   const them = WHO_OTHER(me);
@@ -140,6 +141,7 @@ function renderToday() {
   const yesterday = addDays(today, -1);
   const yRec = state.days[yesterday] || {};
   const showYesterday = yesterday >= s.startDate && isEditable(yesterday, today);
+  const canSkip = skipAvailable(rows, yesterday);
 
   $('#tab-today').innerHTML = `
     <h1>${fmtDate(today)}</h1>
@@ -167,8 +169,12 @@ function renderToday() {
       <p class="grace-row">You ${statusChip(yRec[me])} · ${esc(theirName)} ${statusChip(yRec[them])}</p>
       <div class="mark">
         <button id="y-done" class="done-btn ${yRec[me] === 'done' ? 'active' : ''}">Done</button>
+        ${canSkip ? `<button id="y-skip" class="skip-btn ${yRec[me] === 'skip' ? 'active' : ''}">Skip</button>` : ''}
         <button id="y-missed" class="missed-btn ${yRec[me] === 'missed' ? 'active' : ''}">Missed</button>
       </div>
+      ${canSkip
+        ? '<p class="muted skip-note">Skip counts only if you both pick it — otherwise it\'s a miss. One skip per 7 days.</p>'
+        : '<p class="muted skip-note">Weekly skip already used.</p>'}
     </section>` : ''}
   `;
 
@@ -177,6 +183,7 @@ function renderToday() {
   if (showYesterday) {
     $('#y-done').onclick = () => store.markDay(state.spaceId, yesterday, me, 'done');
     $('#y-missed').onclick = () => store.markDay(state.spaceId, yesterday, me, 'missed');
+    if (canSkip) $('#y-skip').onclick = () => store.markDay(state.spaceId, yesterday, me, 'skip');
   }
 }
 function renderHistory() {
