@@ -96,16 +96,16 @@ function ledger() {
   };
 }
 
-function fmtDate(d) {
+function fmtDate(d, opts = { weekday: 'long', month: 'short', day: 'numeric' }) {
   const [y, m, dd] = d.split('-').map(Number);
-  return new Date(y, m - 1, dd)
-    .toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  return new Date(y, m - 1, dd).toLocaleDateString(undefined, opts);
 }
+const fmtShort = d => fmtDate(d, { weekday: 'short', month: 'short', day: 'numeric' });
 
 function statusChip(s) {
-  if (s === 'done') return '<span class="chip done">✓ done</span>';
-  if (s === 'missed') return '<span class="chip missed">✗ missed</span>';
-  return '<span class="chip pending">— pending</span>';
+  if (s === 'done') return '<span class="chip done"><span class="dot"></span>Done</span>';
+  if (s === 'missed') return '<span class="chip missed"><span class="dot"></span>Missed</span>';
+  return '<span class="chip"><span class="dot"></span>Pending</span>';
 }
 
 function balanceLine(balance) {
@@ -113,7 +113,7 @@ function balanceLine(balance) {
   const s = state.settings;
   const debtor = balance > 0 ? s.nameB : s.nameA;
   const creditor = balance > 0 ? s.nameA : s.nameB;
-  return `<div class="owes">${esc(debtor)} owes ${esc(creditor)} $${Math.abs(balance)}</div>`;
+  return `<div class="owes">${esc(debtor)} owes ${esc(creditor)} <strong>$${Math.abs(balance)}</strong></div>`;
 }
 
 function render() {
@@ -129,6 +129,7 @@ function renderToday() {
   const me = state.who;
   const them = WHO_OTHER(me);
   const myGoal = me === 'a' ? s.goalA : s.goalB;
+  const theirGoal = them === 'a' ? s.goalA : s.goalB;
   const theirName = them === 'a' ? s.nameA : s.nameB;
   const todayRec = state.days[today] || {};
   const yesterday = addDays(today, -1);
@@ -137,27 +138,33 @@ function renderToday() {
 
   $('#tab-today').innerHTML = `
     <h1>${fmtDate(today)}</h1>
-    <div class="pot">Pot <strong>$${pot}</strong>${balanceLine(balance)}</div>
-    <div class="card">
+    <section class="pot">
+      <div class="pot-amount">$${pot}</div>
+      <div class="pot-label">in the pot</div>
+      ${balanceLine(balance)}
+    </section>
+    <section class="card">
+      <p class="card-label">Your goal</p>
       <h2>${esc(myGoal)}</h2>
       <div class="mark">
-        <button id="mark-done" class="done-btn ${todayRec[me] === 'done' ? 'active' : ''}">Done ✓</button>
-        <button id="mark-missed" class="missed-btn ${todayRec[me] === 'missed' ? 'active' : ''}">Missed ✗</button>
+        <button id="mark-done" class="done-btn ${todayRec[me] === 'done' ? 'active' : ''}">Done</button>
+        <button id="mark-missed" class="missed-btn ${todayRec[me] === 'missed' ? 'active' : ''}">Missed</button>
       </div>
-    </div>
-    <div class="card">
-      <h2>${esc(theirName)}</h2>
+    </section>
+    <section class="card">
+      <p class="card-label">${esc(theirName)}'s goal</p>
+      <h2>${esc(theirGoal)}</h2>
       ${statusChip(todayRec[them])}
-    </div>
+    </section>
     ${showYesterday ? `
-    <div class="card">
-      <h3>Yesterday — ${fmtDate(yesterday)}</h3>
-      <p>You: ${statusChip(yRec[me])} · ${esc(theirName)}: ${statusChip(yRec[them])}</p>
+    <section class="card">
+      <p class="card-label">Yesterday · ${fmtShort(yesterday)}</p>
+      <p class="grace-row">You ${statusChip(yRec[me])} · ${esc(theirName)} ${statusChip(yRec[them])}</p>
       <div class="mark">
-        <button id="y-done" class="done-btn ${yRec[me] === 'done' ? 'active' : ''}">Done ✓</button>
-        <button id="y-missed" class="missed-btn ${yRec[me] === 'missed' ? 'active' : ''}">Missed ✗</button>
+        <button id="y-done" class="done-btn ${yRec[me] === 'done' ? 'active' : ''}">Done</button>
+        <button id="y-missed" class="missed-btn ${yRec[me] === 'missed' ? 'active' : ''}">Missed</button>
       </div>
-    </div>` : ''}
+    </section>` : ''}
   `;
 
   $('#mark-done').onclick = () => store.markDay(state.spaceId, today, me, 'done');
@@ -173,20 +180,23 @@ function renderHistory() {
   const name = w => (w === 'a' ? s.nameA : s.nameB);
   const dayItems = rows.slice().reverse().map(r => `
     <div class="hrow">
-      <span>${r.date}</span>
-      <span>${esc(s.nameA)} ${statusChip(r.a)} ${esc(s.nameB)} ${statusChip(r.b)}</span>
+      <span class="hdate">${fmtShort(r.date)}</span>
+      <span class="hstat">${esc(s.nameA)} ${statusChip(r.a)} ${esc(s.nameB)} ${statusChip(r.b)}</span>
     </div>
-    ${r.payout ? `<div class="payout">💸 ${esc(name(r.payout.debtor))} owed ${esc(name(WHO_OTHER(r.payout.debtor)))} $${r.payout.amount}</div>` : ''}
+    ${r.payout ? `<div class="payout">${esc(name(r.payout.debtor))} owed ${esc(name(WHO_OTHER(r.payout.debtor)))} <strong>$${r.payout.amount}</strong></div>` : ''}
   `).join('');
   const settleItems = state.events
     .filter(e => e.type === 'settle' && e.status === 'confirmed')
-    .map(e => `<div class="payout">✅ ${esc(name(e.debtor))} paid ${esc(name(WHO_OTHER(e.debtor)))} $${e.amount} (${(e.createdAt || '').slice(0, 10)})</div>`)
+    .map(e => `<div class="payout">${esc(name(e.debtor))} paid ${esc(name(WHO_OTHER(e.debtor)))} <strong>$${e.amount}</strong>${e.createdAt ? ' · ' + fmtDate(e.createdAt.slice(0, 10), { month: 'short', day: 'numeric' }) : ''}</div>`)
     .join('');
   $('#tab-history').innerHTML = `
     <h1>History</h1>
-    <div class="card">🔥 ${esc(s.nameA)}: ${streaks.a}-day streak · ${esc(s.nameB)}: ${streaks.b}-day streak</div>
+    <div class="card streaks">
+      <div class="streak"><strong>${streaks.a}</strong><span>day streak · ${esc(s.nameA)}</span></div>
+      <div class="streak"><strong>${streaks.b}</strong><span>day streak · ${esc(s.nameB)}</span></div>
+    </div>
     ${settleItems}
-    ${dayItems || '<p class="muted">No days yet.</p>'}
+    ${dayItems || '<p class="empty">Nothing on the books yet.</p>'}
   `;
 }
 
@@ -209,7 +219,7 @@ function renderSettings() {
   let settleHtml;
   if (pendingSettle) {
     settleHtml = `
-      <p>${esc(name(pendingSettle.debtor))} says they paid $${pendingSettle.amount}.</p>
+      <p>${esc(name(pendingSettle.debtor))} says they paid <strong class="money">$${pendingSettle.amount}</strong>.</p>
       ${me !== pendingSettle.debtor
         ? '<button id="settle-confirm">Confirm received</button>'
         : '<p class="muted">Waiting for confirmation…</p>'}
@@ -219,14 +229,14 @@ function renderSettings() {
       ? `<button id="settle-paid">I paid $${Math.abs(balance)}</button>`
       : '<p class="muted">Waiting for them to pay up…</p>';
   } else {
-    settleHtml = '<p class="muted">All square 🎉</p>';
+    settleHtml = '<p class="ok"><span class="dot"></span>All square.</p>';
   }
 
   $('#tab-settings').innerHTML = `
     <h1>Settings</h1>
     <div class="card">
       <h2>Balance</h2>
-      ${balanceLine(balance) || '<p class="muted">$0 — nobody owes anybody.</p>'}
+      ${balanceLine(balance)}
       ${settleHtml}
     </div>
     <form id="settings-form" class="card">
@@ -254,7 +264,12 @@ function renderSettings() {
     store.updateEvent(state.spaceId, pendingSettle.id, { status: 'confirmed' }));
   el('settle-cancel')?.addEventListener('click', () =>
     store.updateEvent(state.spaceId, pendingSettle.id, { status: 'cancelled' }));
-  el('copy-code').onclick = () => navigator.clipboard.writeText(state.spaceId);
+  el('copy-code').onclick = async () => {
+    await navigator.clipboard.writeText(state.spaceId);
+    const btn = el('copy-code');
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy code'; }, 1400);
+  };
 
   el('settings-form').onsubmit = async e => {
     e.preventDefault();
@@ -268,6 +283,9 @@ function renderSettings() {
     await store.updateSettings(state.spaceId, {
       goalA: f.get('goalA'), goalB: f.get('goalB'),
     });
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Saved';
+    setTimeout(() => { if (btn.isConnected) btn.textContent = 'Save'; }, 1400);
   };
 }
 

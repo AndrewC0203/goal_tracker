@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Stakes</title>
-  <meta name="theme-color" content="#101014">
+  <meta name="theme-color" content="#080f0a">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,8 +13,11 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="onboarding" class="screen hidden">
-    <h1>💸 Stakes</h1>
+  <div id="onboarding" class="hidden">
+    <div class="ob-hero">
+      <div class="wordmark">Stakes</div>
+      <p class="tagline">Miss your goal, feed the pot.</p>
+    </div>
     <div id="ob-choice">
       <button id="ob-create-btn" class="big">Create a new space</button>
       <button id="ob-join-btn" class="big secondary">Join with a code</button>
@@ -45,9 +48,29 @@
     <section id="tab-settings" class="tab hidden"></section>
   </main>
   <nav id="tabbar" class="hidden">
-    <button data-tab="today" class="active">Today</button>
-    <button data-tab="history">History</button>
-    <button data-tab="settings">Settings</button>
+    <button data-tab="today" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="3"/>
+        <path d="M16 3v4M8 3v4M3 10h18"/>
+        <path d="m9 15.5 2 2 4-4"/>
+      </svg>
+      Today
+    </button>
+    <button data-tab="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7.5v4.5l3 2"/>
+      </svg>
+      History
+    </button>
+    <button data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h8M18 8h2M4 16h2M12 16h8"/>
+        <circle cx="15" cy="8" r="2.5"/>
+        <circle cx="9" cy="16" r="2.5"/>
+      </svg>
+      Settings
+    </button>
   </nav>
   <script type="module" src="app.js"></script>
 </body>

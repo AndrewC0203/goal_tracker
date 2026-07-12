@@ -1,4 +1,4 @@
-const CACHE = 'stakes-v2';
+const CACHE = 'stakes-v3';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './store.js',
   './ledger.js', './config.js', './manifest.json'];
 
