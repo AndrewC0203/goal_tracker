@@ -22,9 +22,26 @@ function showOnboarding() {
     $('#ob-choice').classList.add('hidden');
     $('#ob-create-form').classList.remove('hidden');
   };
-  $('#ob-join-btn').onclick = () => {
+  $('#ob-join-btn').onclick = async () => {
     $('#ob-choice').classList.add('hidden');
-    $('#ob-join-form').classList.remove('hidden');
+    const listEl = $('#ob-join-list');
+    listEl.classList.remove('hidden');
+    listEl.innerHTML = '<p class="muted">Loading spaces…</p>';
+    const spaces = await store.listSpaces();
+    listEl.innerHTML = spaces.length
+      ? '<h2>Choose your space</h2>'
+      : '<p class="muted">No spaces yet — reload and create one.</p>';
+    for (const sp of spaces) {
+      const btn = document.createElement('button');
+      btn.className = 'big secondary';
+      btn.textContent = `${sp.nameA} & ${sp.nameB}`;
+      btn.onclick = () => {
+        state.spaceId = sp.id;
+        localStorage.setItem('stakes.spaceId', sp.id);
+        pickWho(sp);
+      };
+      listEl.appendChild(btn);
+    }
   };
   $('#ob-create-form').onsubmit = async e => {
     e.preventDefault();
@@ -40,24 +57,12 @@ function showOnboarding() {
     localStorage.setItem('stakes.spaceId', state.spaceId);
     pickWho(settings);
   };
-  $('#ob-join-form').onsubmit = async e => {
-    e.preventDefault();
-    const code = new FormData(e.target).get('code').trim();
-    const settings = await store.getSpace(code);
-    if (!settings) {
-      $('#ob-join-error').classList.remove('hidden');
-      return;
-    }
-    state.spaceId = code;
-    localStorage.setItem('stakes.spaceId', code);
-    pickWho(settings);
-  };
 }
 
 function pickWho(settings) {
   $('#ob-choice').classList.add('hidden');
   $('#ob-create-form').classList.add('hidden');
-  $('#ob-join-form').classList.add('hidden');
+  $('#ob-join-list').classList.add('hidden');
   $('#ob-who').classList.remove('hidden');
   $('#ob-who-a').textContent = `I'm ${settings.nameA}`;
   $('#ob-who-b').textContent = `I'm ${settings.nameB}`;
@@ -247,11 +252,6 @@ function renderSettings() {
       <p class="muted">Stake changes apply starting tomorrow.</p>
       <button type="submit">Save</button>
     </form>
-    <div class="card">
-      <h2>Invite your partner</h2>
-      <p class="code">${state.spaceId}</p>
-      <button id="copy-code" class="secondary">Copy code</button>
-    </div>
   `;
 
   const el = id => document.getElementById(id);
@@ -264,12 +264,6 @@ function renderSettings() {
     store.updateEvent(state.spaceId, pendingSettle.id, { status: 'confirmed' }));
   el('settle-cancel')?.addEventListener('click', () =>
     store.updateEvent(state.spaceId, pendingSettle.id, { status: 'cancelled' }));
-  el('copy-code').onclick = async () => {
-    await navigator.clipboard.writeText(state.spaceId);
-    const btn = el('copy-code');
-    btn.textContent = 'Copied';
-    setTimeout(() => { btn.textContent = 'Copy code'; }, 1400);
-  };
 
   el('settings-form').onsubmit = async e => {
     e.preventDefault();

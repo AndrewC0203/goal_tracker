@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
   initializeFirestore, persistentLocalCache,
-  doc, collection, getDoc, setDoc, addDoc, updateDoc, onSnapshot,
+  doc, collection, getDocs, setDoc, addDoc, updateDoc, onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { firebaseConfig } from './config.js';
 
@@ -19,9 +19,11 @@ export async function createSpace(settings) {
   return spaceId;
 }
 
-export async function getSpace(spaceId) {
-  const snap = await getDoc(doc(db, 'spaces', spaceId));
-  return snap.exists() ? snap.data() : null;
+export async function listSpaces() {
+  const snap = await getDocs(collection(db, 'spaces'));
+  const spaces = [];
+  snap.forEach(d => spaces.push({ id: d.id, ...d.data() }));
+  return spaces;
 }
 
 export function subscribe(spaceId, onChange) {

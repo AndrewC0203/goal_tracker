@@ -20,8 +20,9 @@ one goal each, one configurable daily stake (default $10).
 
 1. Open the live URL in **Safari**.
 2. First phone: **Create a new space** — enter both names, goals, and the
-   stake. Then Settings → **Copy code** and text it to your partner.
-3. Second phone: **Join with a code** → paste → pick who you are.
+   stake.
+3. Second phone: **Join an existing space** → tap your space → pick who
+   you are.
 4. On each phone: tap **Share** → **Add to Home Screen** → **Add**.
    It launches fullscreen like a native app.
 
